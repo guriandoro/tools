@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DO_NOT_STOP_SANDBOX_FILE="do_not_stop_this_sandbox"
+DO_NOT_STOP_SANDBOX_FILE="do_not_stop_this_instance"
 
 # Generate temp file for storing status_all outputs
 # Try until the generated name doesn't collide with another existing file
