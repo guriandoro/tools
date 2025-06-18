@@ -230,16 +230,17 @@ generate_random_text() {
     local result=""
     local batch_size=1000
     local remaining=$length
+
+    local batch=""
     
+    # Generate a batch of random characters
+    for ((i=0; i<current_batch_size; i++)); do
+        local random_index=$((RANDOM % chars_length))
+        batch="${batch}${chars:$random_index:1}"
+    done    
+
     while [ $remaining -gt 0 ]; do
         local current_batch_size=$((remaining > batch_size ? batch_size : remaining))
-        local batch=""
-        
-        # Generate a batch of random characters
-        for ((i=0; i<current_batch_size; i++)); do
-            local random_index=$((RANDOM % chars_length))
-            batch="${batch}${chars:$random_index:1}"
-        done
         
         result="${result}${batch}"
         remaining=$((remaining - current_batch_size))
