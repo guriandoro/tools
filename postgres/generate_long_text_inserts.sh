@@ -213,7 +213,7 @@ generate_column_value() {
 # Function to generate random text of specified length using batch processing
 generate_random_text() {
     local length=$1
-    local chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?;:()[]{}'\"-+=@#$%^&*"
+    local chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     local chars_length=${#chars}
     
     # Try to use /dev/urandom for better performance if available
