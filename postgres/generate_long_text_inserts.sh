@@ -237,6 +237,7 @@ generate_random_text() {
     for ((i=0; i<current_batch_size; i++)); do
         local random_index=$((RANDOM % chars_length))
         batch="${batch}${chars:$random_index:1}"
+        echo "THIS: $batch"
     done    
 
     while [ $remaining -gt 0 ]; do
@@ -271,7 +272,7 @@ generate_lorem_text() {
     while [ $current_length -lt $length ]; do
         local batch=""
         local batch_length=0
-        local max_batch_words=50  # Limit batch size to avoid excessive memory usage
+        local max_batch_words=1000  # Limit batch size to avoid excessive memory usage
         
         # Generate a batch of words
         for ((i=0; i<max_batch_words && current_length + batch_length < length; i++)); do
