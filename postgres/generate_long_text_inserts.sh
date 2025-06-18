@@ -217,14 +217,14 @@ generate_random_text() {
     local chars_length=${#chars}
     
     # Try to use /dev/urandom for better performance if available
-    if [ -r /dev/urandom ] && command -v tr >/dev/null 2>&1 && command -v head >/dev/null 2>&1; then
-        # Use /dev/urandom for faster generation with error handling
-        local result
-        if result=$(head -c $((length * 2)) /dev/urandom 2>/dev/null | tr -dc "$chars" 2>/dev/null | head -c "$length" 2>/dev/null) && [ ${#result} -eq "$length" ]; then
-            echo "$result"
-            return 0
-        fi
-    fi
+    #if [ -r /dev/urandom ] && command -v tr >/dev/null 2>&1 && command -v head >/dev/null 2>&1; then
+    #    # Use /dev/urandom for faster generation with error handling
+    #    local result
+    #    if result=$(head -c $((length * 2)) /dev/urandom 2>/dev/null | tr -dc "$chars" 2>/dev/null | head -c "$length" 2>/dev/null) && [ ${#result} -eq "$length" ]; then
+    #        echo "$result"
+    #        return 0
+    #    fi
+    #fi
     
     # Fallback to batch processing
     local result=""
