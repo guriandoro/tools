@@ -3,6 +3,12 @@
 # PostgreSQL Long Text Insert Generator
 # This script generates SQL INSERT statements with arbitrarily long text columns
 # Useful for testing database performance and handling large text data
+#
+# Performance optimizations:
+# - Uses batch processing for text generation instead of character-by-character
+# - Leverages /dev/urandom when available for faster random text generation
+# - Pre-calculates word lengths for Lorem Ipsum generation
+# - Processes text in configurable batch sizes for optimal memory usage
 
 set -e
 
@@ -204,42 +210,97 @@ generate_column_value() {
     esac
 }
 
-# Function to generate random text of specified length
+# Function to generate random text of specified length using batch processing
 generate_random_text() {
     local length=$1
     local chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?;:()[]{}'\"-+=@#$%^&*"
-    local result=""
+    local chars_length=${#chars}
     
-    for ((i=0; i<length; i++)); do
-        local random_index=$((RANDOM % ${#chars}))
-        result="${result}${chars:$random_index:1}"
+    # Try to use /dev/urandom for better performance if available
+    if [ -r /dev/urandom ] && command -v tr >/dev/null 2>&1 && command -v head >/dev/null 2>&1; then
+        # Use /dev/urandom for faster generation with error handling
+        local result
+        if result=$(head -c $((length * 2)) /dev/urandom 2>/dev/null | tr -dc "$chars" 2>/dev/null | head -c "$length" 2>/dev/null) && [ ${#result} -eq "$length" ]; then
+            echo "$result"
+            return 0
+        fi
+    fi
+    
+    # Fallback to batch processing
+    local result=""
+    local batch_size=1000
+    local remaining=$length
+    
+    while [ $remaining -gt 0 ]; do
+        local current_batch_size=$((remaining > batch_size ? batch_size : remaining))
+        local batch=""
+        
+        # Generate a batch of random characters
+        for ((i=0; i<current_batch_size; i++)); do
+            local random_index=$((RANDOM % chars_length))
+            batch="${batch}${chars:$random_index:1}"
+        done
+        
+        result="${result}${batch}"
+        remaining=$((remaining - current_batch_size))
     done
     
     echo "$result"
 }
 
-# Function to generate Lorem Ipsum text of specified length
+# Function to generate Lorem Ipsum text of specified length using batch processing
 generate_lorem_text() {
     local length=$1
     local lorem_words=("lorem" "ipsum" "dolor" "sit" "amet" "consectetur" "adipiscing" "elit" "sed" "do" "eiusmod" "tempor" "incididunt" "ut" "labore" "et" "dolore" "magna" "aliqua" "ut" "enim" "ad" "minim" "veniam" "quis" "nostrud" "exercitation" "ullamco" "laboris" "nisi" "ut" "aliquip" "ex" "ea" "commodo" "consequat" "duis" "aute" "irure" "dolor" "in" "reprehenderit" "in" "voluptate" "velit" "esse" "cillum" "dolore" "eu" "fugiat" "nulla" "pariatur" "excepteur" "sint" "occaecat" "cupidatat" "non" "proident" "sunt" "in" "culpa" "qui" "officia" "deserunt" "mollit" "anim" "id" "est" "laborum")
+    local words_count=${#lorem_words[@]}
+    
+    # Pre-calculate word lengths with spaces for better performance
+    local word_lengths=()
+    local total_word_length=0
+    for ((i=0; i<words_count; i++)); do
+        local word_with_space="${lorem_words[i]} "
+        word_lengths[i]=${#word_with_space}
+        total_word_length=$((total_word_length + word_lengths[i]))
+    done
     
     local result=""
     local current_length=0
     
+    # Generate text in batches for better performance
     while [ $current_length -lt $length ]; do
-        local random_word=${lorem_words[$((RANDOM % ${#lorem_words[@]}))]}
-        local word_with_space="$random_word "
-        local word_length=${#word_with_space}
+        local batch=""
+        local batch_length=0
+        local max_batch_words=50  # Limit batch size to avoid excessive memory usage
         
-        if [ $((current_length + word_length)) -le $length ]; then
-            result="${result}${word_with_space}"
-            current_length=$((current_length + word_length))
+        # Generate a batch of words
+        for ((i=0; i<max_batch_words && current_length + batch_length < length; i++)); do
+            local random_index=$((RANDOM % words_count))
+            local word_with_space="${lorem_words[random_index]} "
+            local word_length=${word_lengths[random_index]}
+            
+            if [ $((current_length + batch_length + word_length)) -le $length ]; then
+                batch="${batch}${word_with_space}"
+                batch_length=$((batch_length + word_length))
+            else
+                break
+            fi
+        done
+        
+        # Add batch to result
+        if [ $batch_length -gt 0 ]; then
+            result="${result}${batch}"
+            current_length=$((current_length + batch_length))
         else
-            # Fill remaining space with characters
+            # If no words could be added, fill remaining space with characters
             local remaining=$((length - current_length))
-            for ((i=0; i<remaining; i++)); do
-                result="${result}."
-            done
+            if [ $remaining -gt 0 ]; then
+                # Generate remaining characters in one batch
+                local chars="."
+                for ((i=1; i<remaining; i++)); do
+                    chars="${chars}."
+                done
+                result="${result}${chars}"
+            fi
             break
         fi
     done

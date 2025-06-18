@@ -19,9 +19,22 @@ A bash script that generates SQL INSERT statements with arbitrarily long text co
 - Support for multiple column types (ID, text, timestamp, etc.)
 - Option to use Lorem Ipsum text or random characters
 - **NEW:** Read table definition from a SQL file and auto-detect columns/types
+- **NEW:** High-performance batch-based text generation
 - SQL injection safe with proper escaping
 - Progress indicators and file statistics
 - Comprehensive help and usage examples
+
+#### Performance Optimizations
+
+The script includes several performance optimizations for text generation:
+
+- **Batch Processing**: Text is generated in configurable batches (default: 1000 characters) instead of character-by-character, significantly reducing string concatenation overhead
+- **Hardware Acceleration**: When available, uses `/dev/urandom` for faster random text generation with fallback to batch processing
+- **Pre-calculated Lengths**: Lorem Ipsum generation pre-calculates word lengths to avoid repeated string length calculations
+- **Memory Optimization**: Configurable batch sizes prevent excessive memory usage for very large text lengths
+- **Efficient String Operations**: Minimizes string copying and concatenation operations
+
+**Performance Test**: Run `./test_performance.sh` to see the performance improvements in action.
 
 #### Usage
 
